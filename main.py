@@ -23,8 +23,6 @@ pron_persnum = {('Sing', '1'): 'én',
 # emmorph_number = {'Sing': 'Sg',
 #                   'Plur': 'Pl'}
 
-conllu = ['id', 'form', 'lemma', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc']
-
 
 class Word:
 
@@ -32,7 +30,7 @@ class Word:
         self.form = None            # token
         self.anas = None            # anas
         self.lemma = None           # egyértelműsített lemma
-        self.xpos = None            # emtag
+        self.xpostag = None            # emtag
         self.upos = None            # emmorph2ud
         self.feats = None           # emmorph2ud
         self.id = None              # függőségi elemzéshez id
@@ -44,7 +42,7 @@ class Word:
         self.misc = None
 
     def print_token(self):
-        print('\t'.join([self.id, self.form, self.lemma, self.upos, self.xpos, self.feats, self.head, self.deprel, self.deps, self.misc]))
+        print('\t'.join([self.id, self.form, self.lemma, self.upos, self.xpostag, self.feats, self.head, self.deprel, self.deps, self.misc]))
 
 
 def base_features(pro, head):
@@ -140,8 +138,8 @@ def pro_calc_features(head, role):
         pro.feats['Person'] = head.feats['Person[psor]']
         pro.feats['Number'] = head.feats['Number[psor]']
 
-    # pro.xpos = '[/N|Pro][' + pro.feats['Person'] + emmorph_number[pro.feats['Number']] + '][' + pro.feats['Case'] + ']'
-    pro.xpos = 'PRON'
+    # pro.xpostag = '[/N|Pro][' + pro.feats['Person'] + emmorph_number[pro.feats['Number']] + '][' + pro.feats['Case'] + ']'
+    pro.xpostag = 'PRON'
     pro.lemma = pron_persnum[(pro.feats['Number'], pro.feats['Person'])]
     pro.feats = '|'.join(feat + '=' + pro.feats[feat] for feat in sorted(pro.feats, key=str.lower))
     pro.anas = '[]'
@@ -160,8 +158,8 @@ def actor_features(corpus):
     for sent in corpus:
 
         deps = []
-        for head in sent.toks:   # head
-            for dep in sent.toks:
+        for head in sent:   # head
+            for dep in sent:
                 if dep.head == head.id:
                     deps.append((head, dep))
 
@@ -196,7 +194,7 @@ def actor_features(corpus):
 
                         if 'Number[psor]' in actor.feats:
 
-                            for ifposs in sent.toks:
+                            for ifposs in sent:
                                 if ifposs.head == dep.id and ifposs.deprel == 'POSS'\
                                         and ifposs.upos in ('NOUN', 'PROPN', 'ADJ', 'NUM', 'DET', 'PRON'):
                                     # ifposs.print_token()
@@ -289,66 +287,64 @@ def print_pro(token, actors):
                         dep.print_token()
 
 
-def print_corpus(actors, corpus):
+def print_corpus(header, actors, corpus):
 
     for sentence in corpus:
-        print(sentence.orig)
-        for token in sentence.toks:                      # TODO zéró és testes feje sorrend!
-            token.print_token()
+        for token in sentence:                      # TODO zéró és testes feje sorrend!
+            print('\t'.join(getattr(token, field) for field in header))
             print_pro(token, actors)
         print('')
 
 
-def parse_fields(token, line):
+def parse_fields(token, line, header):
 
-    for field in conllu:
-        setattr(token, field, line[conllu.index(field)])
+    for field in header:
+        setattr(token, field, line[header.index(field)])
 
 
 def read_file():
+
+    reader = csv.reader(iter(sys.stdin.readline, ''), delimiter='\t', quoting=csv.QUOTE_NONE)
+    header = next(reader)
 
     corp = list()
 
     abs_counter = 0
     counter = 0
 
-    reader = csv.reader(iter(sys.stdin.readline, ''), delimiter='\t', quoting=csv.QUOTE_NONE)
-
-    Sentence = namedtuple('Sentence', ['orig', 'toks'])
-    orig = ''
     sent = list()
 
     for line in reader:
 
-        if len(line) > 1 and '#' not in line[0]:
+        if len(line) > 1:
             abs_counter += 1
 
             if line:
                 token = Word()
-                parse_fields(token, line)
+                parse_fields(token, line, header)
                 token.sent_nr = str(counter)
                 token.abs_index = str(abs_counter)
 
                 sent.append(token)
 
-        elif len(line) == 1 and line[0].startswith('#'):
-            orig = line[0]
-
         else:
             counter += 1
-            corp.append(Sentence(orig, sent))
+            corp.append(sent)
             sent = list()
 
-    return corp
+    # for sent in corp:
+    #     for token in sent:
+    #         print(token.form)
+    #     print('')
+
+    return header, corp
 
 
 def main():
 
     # beolvassa a conll-t
-    corpus = read_file()
-
-    # elmenti az eredeti korpuszt
-    raw_corpus = corpus
+    header, corpus = read_file()
+    orig_corpus = corpus
 
     # berakja a kivant adatszerkezetbe
     actors = actor_features(corpus)
@@ -356,13 +352,8 @@ def main():
     # letrehozza a droppolt alanyokat, targyakat, birtokosokat, majd torli a foloslegeseket
     insert_pro(actors)
 
-    # for sent in corpus:
-    #     for tok in sent.toks:
-    #         print(tok.form)
-    #     print('')
-
     # kiirja
-    print_corpus(actors, raw_corpus)
+    print_corpus(header, actors, orig_corpus)
 
 
 if __name__ == "__main__":
