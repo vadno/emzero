@@ -30,9 +30,11 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 10	és	és	CONJ	[/Cnj]	_	9	CONJ
 11	bizonyítékokat	bizonyíték	NOUN	[/N][Pl][Acc]	Case=Acc|Number=Plur	10	COORD
 12	találnia	talál	VERB	[/V][Inf.3Sg]	Number=Sing|Person=3|Tense=Pres|VerbForm=Inf|Voice=Act	7	INF
+12.SUBJ	DROP	ő/az	PRON	_	Case=Nom|Number=Sing|Person=3|PronType=Prs	12	SUBJ
 13	,	,	PUNCT	[Punct]	_	7	PUNCT
 14	melyek	amely	PRON	[/N|Pro|Rel][Pl][Nom]	Case=Nom|Number=Plur|Person=3|PronType=Rel	16	SUBJ
 15	segítségükre	segítség	NOUN	[/N][Poss.3Pl][Subl]	Case=Sub|Number=Sing|Number[psor]=Plur|Person[psor]=3	16	OBL
+15.POSS	DROP	ők/azok	POSS	_	Case=Gen|Number=Plur|Person=3|PronType=Prs	15	POSS
 16	lehetnének	van	VERB	[/V][_Mod/V][Cond.NDef.3Pl]	Definite=Ind|Mood=Cnd,Pot|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin|Voice=Act	7	ATT
 17	az	az	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	18	DET
 18	ügy	ügy	POSS	[/N][Nom]	Case=Nom|Number=Sing	19	POSS
@@ -50,6 +52,7 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 9	korai	korai	ADJ	[/Adj][Nom]	Case=Nom|Degree=Pos|Number=Sing	10	ATT
 10	órákban	óra	NOUN	[/N][Pl][Ine]	Case=Ine|Number=Plur	11	TLOCY
 11	találtak	talál	VERB	[/V][Pst.NDef.3Pl]	Definite=Ind|Mood=Ind|Number=Plur|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	0	ROOT
+11.SUBJ	DROP	ők/azok	PRON	_	Case=Nom|Number=Plur|Person=3|PronType=Prs	11	SUBJ
 12	rá	rá	PART	[/Prev]	_	11	PREVERB
 13	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	17	DET
 14	Dhaka	Dhaka	PROPN	[/N][Nom]	Case=Nom|Number=Sing	17	POSS
@@ -58,6 +61,7 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 17	városrészében	városrész	NOUN	[/N][Poss.3Sg][Ine]	Case=Ine|Number=Sing|Number[psor]=Sing|Person[psor]=3	18	OBL
 18	lévő	lévő	ADJ	[/Adj][Nom]	Case=Nom|Degree=Pos|Number=Sing	19	ATT
 19	lakásukban	lakás	NOUN	[/N][Poss.3Pl][Ine]	Case=Ine|Number=Sing|Number[psor]=Plur|Person[psor]=3	11	LOCY
+19.POSS	DROP	ők/azok	PRON	_	Case=Gen|Number=Plur|Person=3|PronType=Prs	19	POSS
 20	.	.	PUNCT	[Punct]	_	0	PUNCT
 
 1	A	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	4	DET
@@ -65,6 +69,7 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 3	Legfelsőbb	felső	ADJ	[/Supl][/Adj][_Comp/Adj][Nom]	Case=Nom|Degree=Sup|Number=Sing	4	NE
 4	Bíróság	bíróság	NOUN	[/N][Nom]	Case=Nom|Number=Sing	6	SUBJ
 5	elégedetlenségét	elégedetlenség	NOUN	[/N][Poss.3Sg][Acc]	Case=Acc|Number=Sing|Number[psor]=Sing|Person[psor]=3	6	OBJ
+5.POSS	DROP	ő/az	POSS	_	Case=Gen|Number=Sing|Person=3|PronType=Prs	5	POSS
 6	fejezte	fejez	VERB	[/V][Pst.Def.3Sg]	Definite=Def|Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	0	ROOT
 7	ki	ki	PART	[/Prev]	_	6	PREVERB
 8	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	9	DET
@@ -102,10 +107,12 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 2	holttesteket	holttest	NOUN	[/N][Pl][Acc]	Case=Acc|Number=Plur	4	OBJ
 3	már	már	ADV	[/Adv]	_	4	TLOCY
 4	exhumálták	exhumál	VERB	[/V][Pst.Def.3Pl]	Definite=Def|Mood=Ind|Number=Plur|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	0	ROOT
+4.SUBJ	DROP	ők/azok	PRON	_	Case=Nom|Number=Plur|Person=3|PronType=Prs	4	SUBJ
 5	is	is	ADV	[/Adv]	_	4	MODE
 6	,	,	PUNCT	[Punct]	_	4	PUNCT
 7	hogy	hogy	SCONJ	[/Cnj]	_	4	CONJ
 8	megismételjék	megismétel	VERB	[/V][Sbjv.Def.3Pl]	Definite=Def|Mood=Imp|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin|Voice=Act	7	ATT
+8.SUBJ	DROP	ők/azok	PRON	_	Case=Nom|Number=Plur|Person=3|PronType=Prs	8	SUBJ
 9	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	10	DET
 10	boncolást	boncolás	NOUN	[/N][Acc]	Case=Acc|Number=Sing	8	OBJ
 11	.	.	PUNCT	[Punct]	_	0	PUNCT
@@ -126,20 +133,24 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 4	úgy	úgy	PRON	[/Adv|Pro]	Case=Nom|Number=Sing|Person=3|PronType=Prs	6	MODE
 5	próbálta	próbál	VERB	[/V][Pst.Def.3Sg]	Definite=Def|Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	0	ROOT
 6	megakadályozni	megakadályoz	VERB	[/V][Inf]	VerbForm=Inf|Voice=Act	5	INF
+6.SUBJ	DROP	X	PRON	_	Case=Nom|Number=X|Person=X|PronType=Prs	6	SUBJ
 7	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	8	DET
 8	bloggerek	blogger	POSS	[/N][Pl][Nom]	Case=Nom|Number=Plur	9	POSS
 9	tiltakozóakcióját	tiltakozóakció	NOUN	[/N][Poss.3Sg][Acc]	Case=Acc|Number=Sing|Number[psor]=Sing|Person[psor]=3	6	OBJ
 10	,	,	PUNCT	[Punct]	_	5	PUNCT
 11	hogy	hogy	SCONJ	[/Cnj]	_	5	CONJ
 12	autóikat	autó	NOUN	[/N][Pl.Poss.3Pl][Acc]	Case=Acc|Number=Plur|Number[psor]=Plur|Person[psor]=3	16	OBJ
+12.POSS	DROP	ők/azok	POSS	_	Case=Gen|Number=Plur|Person=3|PronType=Prs	12	POSS
 13	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	14	DET
 14	tüntetés	tüntetés	POSS	[/N][Nom]	Case=Nom|Number=Sing	15	POSS
 15	helyszínére	helyszín	NOUN	[/N][Poss.3Sg][Subl]	Case=Sub|Number=Sing|Number[psor]=Sing|Person[psor]=3	16	OBL
 16	parkolták	parkol	VERB	[/V][Pst.Def.3Pl]	Definite=Def|Mood=Ind|Number=Plur|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	11	ATT
+16.SUBJ	DROP	ők/azok	PRON	_	Case=Nom|Number=Plur|Person=3|PronType=Prs	16	SUBJ
 17	le	le	PRON	[/Prev]	_	16	PREVERB
 18	és	és	CONJ	[/Cnj]	_	16	CONJ
 19	nem	nem	ADV	[/Adv]	PronType=Neg	20	NEG
 20	adtak	ad	VERB	[/V][Pst.NDef.3Pl]	Definite=Ind|Mood=Ind|Number=Plur|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	18	COORD
+20.SUBJ	DROP	ők/azok	PRON	_	Case=Nom|Number=Plur|Person=3|PronType=Prs	20	SUBJ
 21	engedélyt	engedély	NOUN	[/N][Acc]	Case=Acc|Number=Sing	20	OBJ
 22	az	az	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	24	DET
 23	elektromos	elektromos	ADJ	[/Adj|Attr][Nom]	Case=Nom|Degree=Pos|Number=Sing	24	ATT

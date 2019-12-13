@@ -20,8 +20,9 @@ pron_persnum = {('Sing', '1'): 'én',
                 ('Plur', '3'): 'ők/azok',
                 ('X', 'X'): 'X'}
 
-# emmorph_number = {'Sing': 'Sg',
-#                   'Plur': 'Pl'}
+emmorph_number = {'Sing': 'Sg',
+                  'Plur': 'Pl',
+                  'X': 'X'}
 
 
 class Word:
@@ -91,8 +92,8 @@ def pro_default_features(dropped):
     elif dropped.deprel == 'POSS':
         dropped.feats['Case'] = 'Gen'
     dropped.feats['PronType'] = 'Prs'
-    dropped.deps = '_'
-    dropped.misc = '_'
+    # dropped.deps = '_'
+    # dropped.misc = '_'
 
 
 def pro_calc_features(head, role):
@@ -138,8 +139,8 @@ def pro_calc_features(head, role):
         pro.feats['Person'] = head.feats['Person[psor]']
         pro.feats['Number'] = head.feats['Number[psor]']
 
-    # pro.xpostag = '[/N|Pro][' + pro.feats['Person'] + emmorph_number[pro.feats['Number']] + '][' + pro.feats['Case'] + ']'
-    pro.xpostag = 'PRON'
+    pro.xpostag = '[/N|Pro][' + pro.feats['Person'] + emmorph_number[pro.feats['Number']] + '][' + pro.feats['Case'] + ']'
+    # pro.xpostag = 'PRON'
     pro.lemma = pron_persnum[(pro.feats['Number'], pro.feats['Person'])]
     pro.feats = '|'.join(feat + '=' + pro.feats[feat] for feat in sorted(pro.feats, key=str.lower))
     pro.anas = '[]'
@@ -184,6 +185,7 @@ def actor_features(corpus):
                 actors[verb] = []
 
                 for dep in deps_dict[head]:
+
                     if dep.deprel in ('SUBJ', 'OBJ', 'OBL', 'DAT', 'POSS', 'INF', 'LOCY'):  # TODO egyéb határozók
 
                         actor = Word()
@@ -277,22 +279,24 @@ def insert_pro(actor_list):
                 remove_dropped(actor.id, deps, 'POSS')
 
 
-def print_pro(token, actors):
+def print_pro(header, token, actors):
 
     for sent in actors:
         for key, value in sent.items():
             for dep in value:
                 if dep.abs_index == token.abs_index:
                     if dep.form == 'DROP':
-                        dep.print_token()
+                        print('\t'.join(getattr(dep, field) for field in header))
 
 
 def print_corpus(header, actors, corpus):
 
+    print('\t'.join(field for field in header))
+
     for sentence in corpus:
         for token in sentence:                      # TODO zéró és testes feje sorrend!
             print('\t'.join(getattr(token, field) for field in header))
-            print_pro(token, actors)
+            print_pro(header, token, actors)
         print('')
 
 
@@ -331,6 +335,8 @@ def read_file():
             counter += 1
             corp.append(sent)
             sent = list()
+
+    corp.append(sent)
 
     # for sent in corp:
     #     for token in sent:
