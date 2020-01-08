@@ -358,7 +358,7 @@ class EmZero:
 def main():
     zero = EmZero()
 
-    # beolvassa a conll-t
+    # beolvassa az xtsv-t
     header, corpus = zero.read_file()
     orig_corpus = corpus
 
