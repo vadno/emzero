@@ -176,8 +176,7 @@ class EmZero:
                     if dep.head == head.id:
                         deps.append((head, dep))
 
-                if head.upos in (
-                'VERB',) and head not in deps:  # TODO nem csak igék! minden vonzatos cucc (hat.in, fn.in stb)
+                if head.upos in ('VERB',) and head not in deps:  # TODO nem csak igék! minden vonzatos cucc
                     deps.append((head, head))
 
             # egy elemhez hozzarendeli az osszes ramutato fuggosegi viszonyt
@@ -188,7 +187,7 @@ class EmZero:
 
             for head in deps_dict:
 
-                if head.upos in ('VERB',):  # TODO nem csak igék! minden vonzatos cucc (hat.in, fn.in stb)
+                if head.upos in ('VERB',):  # TODO nem csak igék! minden vonzatos cucc
 
                     verb = Word()
                     self.base_features(verb, head)
