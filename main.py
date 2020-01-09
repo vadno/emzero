@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
     author: Noémi Vadász
-    last update: 2020.01.08.
+    last update: 2020.01.09.
 
 """
 
@@ -22,6 +22,13 @@ emmorph_number = {'Sing': 'Sg',
                   'Plur': 'Pl',
                   'X': 'X'}
 
+# Balázs 5) A 201.-hez hasonló "valami" in "sok dolog" típusú dolgoknál a jobboldal halmaz legyen.
+# Ha ezek konstansok, akkor nevezzük el egy néven és a ciklusokon kívül definiáljuk, mert úgy gyorsabb.
+
+# így jó globális változónak?
+arguments = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'POSS', 'INF', 'LOCY'}
+nominals = {'NOUN', 'PROPN', 'ADJ', 'NUM', 'DET', 'PRON'}
+
 
 class Word:
 
@@ -40,7 +47,7 @@ class Word:
         self.deps = None
         self.misc = None
 
-    def print_token(self):
+    def _print_token(self):
         print('\t'.join(
             [self.id, self.form, self.lemma, self.upos, self.xpostag, self.feats, self.head, self.deprel, self.deps,
              self.misc]))
@@ -49,6 +56,10 @@ class Word:
 class EmZero:
     def __init__(self, source_fields=None, target_fields=None):
         # Custom code goes here
+        # Balázs 3) az actor_list legyen az osztály property-je, mert úgy egyszerűbb, mint kívül átadogatni.
+
+        # ugye így gondoltad?
+        self.actor_list = list()
 
         # Field names for xtsv (the code below is mandatory for an xtsv module)
         if source_fields is None:
@@ -61,7 +72,7 @@ class EmZero:
         self.target_fields = target_fields
 
     @staticmethod
-    def base_features(pro, head):
+    def _base_features(pro, head):
         """
         feature-ök, amelyeket a zéró elem attól a fejtől örököl
         :param pro: zéró elem
@@ -73,7 +84,7 @@ class EmZero:
             setattr(pro, field, getattr(head, field))
 
     @staticmethod
-    def parse_udfeats(feats):
+    def _parse_udfeats(feats):
         """
         az UD jegyek sztringjét dolgozza fel (| és = mentén)
         :param feats: UD jegyek sztringje
@@ -90,7 +101,7 @@ class EmZero:
         return featdict
 
     @staticmethod
-    def pro_default_features(dropped):
+    def _pro_default_features(dropped):
         """
         a droppolt nevmas alapjegyeit allitja be
         :param dropped: a droppolt actor adatszerkezete
@@ -108,7 +119,7 @@ class EmZero:
             dropped.feats['Case'] = 'Gen'
         dropped.feats['PronType'] = 'Prs'
 
-    def pro_calc_features(self, head, role):
+    def _pro_calc_features(self, head, role):
         """
         a droppolt névmás jegyeit nyeri ki a fejből (annak UD jegyeiből)
         :param head:
@@ -122,7 +133,7 @@ class EmZero:
         pro.abs_index = head.abs_index
         pro.deprel = role
         pro.head = head.id
-        self.pro_default_features(pro)
+        self._pro_default_features(pro)
 
         if role == 'OBJ':
             pro.feats['Number'] = 'Sing'
@@ -160,74 +171,71 @@ class EmZero:
 
         return pro
 
-    def actor_features(self, corpus):
-        """
+    def process_sentence(self, sent):
 
-        :return:
-        """
+        sent_actors = list()
 
-        actor_list = []  # actorlista: mondatok listaja, kulcs az ige, ertek a vonzatok listaja
+        # Balázs 4) 173-186 ez egy lépésben kellene csinálni. Meg lehet.
 
-        for sent in corpus:
+        # ezt nem tudom, hogy lehetne összetömöríteni egy sorba
+        deps = []
+        for head in sent:  # head
+            for dep in sent:
+                if dep.head == head.id:
+                    deps.append((head, dep))
 
-            deps = []
-            for head in sent:  # head
-                for dep in sent:
-                    if dep.head == head.id:
-                        deps.append((head, dep))
+            if head.upos in ('VERB',) and head not in deps:  # TODO nem csak igék! minden vonzatos cucc
+                deps.append((head, head))
 
-                if head.upos in ('VERB',) and head not in deps:  # TODO nem csak igék! minden vonzatos cucc
-                    deps.append((head, head))
+        # egy elemhez hozzarendeli az osszes ramutato fuggosegi viszonyt
+        # egy headhez az osszes depot
+        deps_dict = {}
+        for a, b in deps:
+            deps_dict.setdefault(a, []).append(b)
 
-            # egy elemhez hozzarendeli az osszes ramutato fuggosegi viszonyt
-            # egy headhez az osszes depot
-            deps_dict = {}
-            for a, b in deps:
-                deps_dict.setdefault(a, []).append(b)
+        for head in deps_dict:
 
-            for head in deps_dict:
+            if head.upos in ('VERB',):  # TODO nem csak igék! minden vonzatos cucc
 
-                if head.upos in ('VERB',):  # TODO nem csak igék! minden vonzatos cucc
+                verb = Word()
+                self._base_features(verb, head)
+                verb.feats = self._parse_udfeats(verb.feats)
 
-                    verb = Word()
-                    self.base_features(verb, head)
-                    verb.feats = self.parse_udfeats(verb.feats)
+                actors = defaultdict(list)
+                actors[verb] = []
 
-                    actors = defaultdict(list)
-                    actors[verb] = []
+                for dep in deps_dict[head]:
 
-                    for dep in deps_dict[head]:
+                    if dep.deprel in arguments:  # TODO egyéb határozók
 
-                        if dep.deprel in ('SUBJ', 'OBJ', 'OBL', 'DAT', 'POSS', 'INF', 'LOCY'):  # TODO egyéb határozók
+                        actor = Word()
+                        self._base_features(actor, dep)
+                        actor.feats = self._parse_udfeats(actor.feats)
 
-                            actor = Word()
-                            self.base_features(actor, dep)
-                            actor.feats = self.parse_udfeats(actor.feats)
+                        actor.sent_nr = verb.sent_nr
 
-                            actor.sent_nr = verb.sent_nr
+                        if 'Number[psor]' in actor.feats:
 
-                            if 'Number[psor]' in actor.feats:
+                            for ifposs in sent:
+                                if ifposs.head == dep.id and ifposs.deprel == 'POSS' \
+                                        and ifposs.upos in nominals:
+                                    # ifposs.print_token()
+                                    ifposs.upos = 'PRON'
 
-                                for ifposs in sent:
-                                    if ifposs.head == dep.id and ifposs.deprel == 'POSS' \
-                                            and ifposs.upos in ('NOUN', 'PROPN', 'ADJ', 'NUM', 'DET', 'PRON'):
-                                        # ifposs.print_token()
-                                        ifposs.upos = 'PRON'
+                                    newactor = Word()
+                                    self._base_features(newactor, ifposs)
+                                    newactor.feats = self._parse_udfeats(ifposs.feats)
 
-                                        newactor = Word()
-                                        self.base_features(newactor, ifposs)
-                                        newactor.feats = self.parse_udfeats(ifposs.feats)
+                                    actors[verb].append(newactor)
 
-                                        actors[verb].append(newactor)
+                        actors[verb].append(actor)
 
-                            actors[verb].append(actor)
+                sent_actors.append(actors)
 
-                    actor_list.append(actors)
-
-        return actor_list
+        return sent_actors
 
     @staticmethod
-    def remove_dropped(head, deps, role):
+    def _remove_dropped(head, deps, role):
         """
         kitorli a actors kozul azokat a droppolt alanyokat, targyakat, amikhez van testes
         :param? head:
@@ -238,56 +246,66 @@ class EmZero:
 
         subj_obj_poss = False
         for actor in deps:
+
+            # Balázs 7) A 241-242. egysorosítható, mivel úgyis bool-t kell csinálni...
+
+            # ez befolyásolja a kimenetet, nem egészen értem, hogy miért
+            # subj_obj_poss = actor.head == head and actor.deprel == role and actor.form != 'DROP'
+
             if actor.head == head and actor.deprel == role and actor.form != 'DROP':
                 subj_obj_poss = True
 
         if subj_obj_poss:
+
+            # Balázs 8) 245-247. ez egy list comprehension,
+            # de egyszerűbben kellene kilogikázni
+            # azt írja le hogy "ez maradjon meg az új deps"-ben,
+            # ami felülvágja a régit == remove-oljuk ami nem kell, csak pythonosabban.
+
+            # nem tudom, hogy hogy kellene megcsinálni
+            # deps = [deps for actor in deps if
+            #         not (actor.head == head and actor.deprel == role and actor.form == 'DROP')]
+
             for actor in deps:
                 if actor.head == head and actor.deprel == role and actor.form == 'DROP':
                     deps.remove(actor)
 
-    def insert_pro(self, actor_list):
+    def insert_pro(self):
         """
         letrehoz droppolt alanyt, targyat
         alanyt: minden igenek
         targyat: csak a definit ragozasu igeknek
-        :param actor_list: a actors adatszerkezete
+        :param
         :return:
         """
 
-        for actors in actor_list:
+        for actors in self.actor_list:
             for verb, deps in actors.items():
 
-                subj = self.pro_calc_features(verb, 'SUBJ')
+                subj = self._pro_calc_features(verb, 'SUBJ')
                 actors[verb].append(subj)
 
-                if 'Definite' in verb.feats and verb.feats['Definite'] in ('Def', '2'):
+                if 'Definite' in verb.feats and verb.feats['Definite'] in {'Def', '2'}:
 
-                    inf = False
-                    for actor in actors[verb]:
-                        if actor.deprel == 'INF':
-                            inf = True
-                            break
+                    # Balázs 9) 266-270 úgy hívják hogy any() egy sorban le tudod írni ugyanezt.
+
+                    # így jó?
+                    inf = any([actor.deprel == 'INF' for actor in actors[verb]])
 
                     if not inf:
-                        obj = self.pro_calc_features(verb, 'OBJ')
+                        obj = self._pro_calc_features(verb, 'OBJ')
                         actors[verb].append(obj)
 
                 for actor in deps:
                     if 'Number[psor]' in actor.feats:
-                        poss = self.pro_calc_features(actor, 'POSS')
+                        poss = self._pro_calc_features(actor, 'POSS')
                         actors[verb].append(poss)
 
-                # print(verb.form)
-                # for actor in deps:
-                #     print(actor.form, actor.deprel, sep='\t')
-                # print('')
-
                 # kitorli a droppolt alanyt, targyat, ha van testes megfeleloje
-                self.remove_dropped(verb.id, deps, 'SUBJ')
-                self.remove_dropped(verb.id, deps, 'OBJ')
+                self._remove_dropped(verb.id, deps, 'SUBJ')
+                self._remove_dropped(verb.id, deps, 'OBJ')
                 for actor in deps:
-                    self.remove_dropped(actor.id, deps, 'POSS')
+                    self._remove_dropped(actor.id, deps, 'POSS')
 
     @staticmethod
     def print_pro(header, token, actors):
@@ -299,18 +317,18 @@ class EmZero:
                         if dep.form == 'DROP':
                             print('\t'.join(getattr(dep, field) for field in header))
 
-    def print_corpus(self, header, actors, corpus):
+    def print_corpus(self, header, corpus):
 
         print('\t'.join(field for field in header))
 
         for sentence in corpus:
-            for token in sentence:  # TODO zéró és testes feje sorrend!
+            for token in sentence:
                 print('\t'.join(getattr(token, field) for field in header))
-                self.print_pro(header, token, actors)
+                self.print_pro(header, token, self.actor_list)
             print('')
 
     @staticmethod
-    def parse_fields(token, line, header):
+    def _parse_fields(token, line, header):
 
         for field in header:
             setattr(token, field, line[header.index(field)])
@@ -334,7 +352,7 @@ class EmZero:
 
                 if line:
                     token = Word()
-                    self.parse_fields(token, line, header)
+                    self._parse_fields(token, line, header)
                     token.sent_nr = str(counter)
                     token.abs_index = str(abs_counter)
 
@@ -347,11 +365,6 @@ class EmZero:
 
         corp.append(sent)
 
-        # for sent in corp:
-        #     for token in sent:
-        #         print(token.form)
-        #     print('')
-
         return header, corp
 
 
@@ -360,16 +373,21 @@ def main():
 
     # beolvassa az xtsv-t
     header, corpus = zero.read_file()
-    orig_corpus = corpus
 
-    # berakja a kivant adatszerkezetbe
-    actors = zero.actor_features(corpus)
+    for sent in corpus:
+
+        # Balázs: 2) A 171. sor-ban van egy mondatonkénti iterálás. Ez kellene a process_sentence-nek lenni,
+        # ahol az egy mondat a bement és a ciklus belseje a függvény.
+
+        # így gondoltad? de a process sentence akkor nem belső függvény lesz ugye?
+        sent_actors = zero.process_sentence(sent)
+        zero.actor_list.extend(sent_actors)
 
     # letrehozza a droppolt alanyokat, targyakat, birtokosokat, majd torli a foloslegeseket
-    zero.insert_pro(actors)
+    zero.insert_pro()
 
     # kiirja
-    zero.print_corpus(header, actors, orig_corpus)
+    zero.print_corpus(header, corpus)
 
 
 if __name__ == '__main__':
