@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 """
     author: Noémi Vadász
-    last update: 2020.01.09.
-
+    last update: 2020.01.10.
 """
 
 from collections import defaultdict
@@ -174,20 +173,23 @@ class EmZero:
     def process_sentence(self, sent):
 
         sent_actors = list()
-
         deps_dict = defaultdict(list)
-        for head in sent:  # head
+
+        # elmenti az összes függőséget
+        # dictet épít: az anyacsomóponthoz a gyerekeit listázza
+        for head in sent:
             for dep in sent:
                 if dep.head == head.id:
                     deps_dict[head].append(dep)
 
-            if head.upos in VERBS and head not in deps_dict:  # TODO nem csak igék! minden vonzatos cucc
+            # TODO miért kell ez?
+            if head.upos in VERBS and head not in deps_dict:
                 deps_dict[head].append(head)
 
         for head in deps_dict:
+            if head.upos in VERBS:
 
-            if head.upos in VERBS:  # TODO nem csak igék! minden vonzatos cucc
-
+                # TODO egybevonni
                 verb = Word()
                 self._base_features(verb, head)
                 verb.feats = self._parse_udfeats(verb.feats)
@@ -196,26 +198,25 @@ class EmZero:
                 actors[verb] = []
 
                 for dep in deps_dict[head]:
+                    if dep.deprel in ARGUMENTS:
 
-                    if dep.deprel in ARGUMENTS:  # TODO egyéb határozók
-
+                        # TODO egybevonni
                         actor = Word()
                         self._base_features(actor, dep)
                         actor.feats = self._parse_udfeats(actor.feats)
 
                         actor.sent_nr = verb.sent_nr
 
+                        # itt megnézi, hogy vannak-e birtokok a mondatban
                         if 'Number[psor]' in actor.feats:
-
                             for ifposs in sent:
-                                if ifposs.head == dep.id and ifposs.deprel == 'POSS' \
-                                        and ifposs.upos in NOMINALS:
-                                    # ifposs.print_token()
-                                    ifposs.upos = 'PRON'
+                                # van-e birtokos függőségi viszony
+                                # TODO ez most a korkorpuszra van hangolva (eredeti tagset: ATT)
+                                if ifposs.head == dep.id and ifposs.deprel == 'POSS' and ifposs.upos in NOMINALS:
 
                                     newactor = Word()
                                     self._base_features(newactor, ifposs)
-                                    newactor.feats = self._parse_udfeats(ifposs.feats)
+                                    newactor.feats = self._parse_udfeats(newactor.feats)
 
                                     actors[verb].append(newactor)
 
