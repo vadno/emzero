@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
     author: Noémi Vadász
-    last update: 2020.01.10.
+    last update: 2020.01.11.
 """
 
 from collections import defaultdict
@@ -37,7 +40,8 @@ class Word:
         self.xpostag = xpostag  # emtag
         self.upos = upos  # emmorph2ud
         if isinstance(feats, str):
-            feats = self._parse_udfeats(feats)
+            feats = dict(feat.split('=', maxsplit=1) for feat in feats.split('|') if feats != '_')
+            # feats = self._parse_udfeats(feats)
         self.feats = feats  # emmorph2ud
         self.id = tid  # függőségi elemzéshez id
         self.deprel = deprel  # függőségi él típusa
@@ -55,28 +59,35 @@ class Word:
         """
         return cls(head.form, head.anas, head.lemma, head.xpostag, head.upos, head.feats, head.id, head.deprel,
                    head.head, head.sent_nr, head.abs_index, head.deps, head.misc)
+    #
+    # @staticmethod
+    # def _parse_udfeats(feats):
+    #     """
+    #     az UD jegyek sztringjét dolgozza fel (| és = mentén)
+    #     :param feats: UD jegyek sztringje
+    #     :return: dictbe rendezett kulcs-érték párok
+    #     """
+    #
+    #     # itt összevontam egy sorban, de nem sikerült beletenni az __init__-be
+    #     featdict = dict(feat.split('=', maxsplit=1) for feat in feats.split('|') if feats != '_')
+    #
+    #     return featdict
 
-    @staticmethod
-    def _parse_udfeats(feats):
-        """
-        az UD jegyek sztringjét dolgozza fel (| és = mentén)
-        :param feats: UD jegyek sztringje
-        :return: dictbe rendezett kulcs-érték párok
-        """
+    def format(self):
+        if len(self.feats) == 0:
+            feats = '_'
+        elif isinstance(self.feats, dict):
+            feats = '|'.join('{0}={1}'.format(feat, val) for feat, val in sorted(self.feats.items(),
+                                                                                 key=lambda x: x[0].lower()))
+        else:
+            feats = self.feats
 
-        featdict = dict()
-
-        if feats != '_':
-            for feat in feats.split('|'):
-                feat = feat.split('=')
-                featdict[feat[0]] = feat[1]
-
-        return featdict
+        formatted_list = [str(i) for i in [self.id, self.form, self.lemma, self.upos, self.xpostag, feats,
+                                           self.head, self.deprel, self.deps, self.misc] if i is not None]
+        return formatted_list
 
     def __str__(self):
-        return '\t'.join(
-            [self.id, self.form, self.lemma, self.upos, self.xpostag, self.feats, self.head, self.deprel, self.deps,
-             self.misc])
+        return '\t'.join(self.format())
 
     def __repr__(self):
         return repr([self.id, self.form, self.lemma, self.upos, self.xpostag, self.feats, self.head, self.deprel,
@@ -86,6 +97,8 @@ class Word:
 class EmZero:
     def __init__(self, source_fields=None, target_fields=None):
         # Custom code goes here
+        self._abs_counter = 0
+        self._counter = 0
 
         # Field names for xtsv (the code below is mandatory for an xtsv module)
         if source_fields is None:
@@ -99,8 +112,8 @@ class EmZero:
 
     @staticmethod
     def prepare_fields(field_names):
-        return [field_names['form'], field_names['lemma'], field_names['xpostag'], field_names['upos'],
-                field_names['feats'], field_names['id'], field_names['head'], field_names['deprel']]
+        return [field_names['id'], field_names['form'], field_names['lemma'], field_names['upos'],
+                field_names['xpostag'], field_names['feats'], field_names['head'], field_names['deprel']]
 
     @staticmethod
     def _pro_default_features(deprel):
@@ -171,8 +184,18 @@ class EmZero:
 
         return pro
 
-    @staticmethod
-    def process_sentence(sent):
+    def process_sentence(self, inp_sent, field_indices):
+
+        self._counter += 1
+        sent = []
+
+        for tok in inp_sent:
+            self._abs_counter += 1
+            token = Word(tid=tok[field_indices[0]], form=tok[field_indices[1]], lemma=tok[field_indices[2]],
+                         upos=tok[field_indices[3]], xpostag=tok[field_indices[4]], feats=tok[field_indices[5]],
+                         head=tok[field_indices[6]], deprel=tok[field_indices[7]],
+                         sent_nr=str(self._counter), abs_index=str(self._abs_counter))
+            sent.append(token)
 
         sent_actors = list()
         deps_dict = defaultdict(list)
@@ -194,7 +217,6 @@ class EmZero:
                 verb = Word.inherit_base_features(head)
 
                 actors = defaultdict(list)
-                actors[verb] = []
 
                 for dep in deps_dict[head]:
                     if dep.deprel in ARGUMENTS:
@@ -218,6 +240,19 @@ class EmZero:
 
                 sent_actors.append(actors)
 
+        # letrehozza a droppolt alanyokat, targyakat, birtokosokat, majd torli a foloslegeseket
+        self._insert_pro(sent_actors)
+
+        # kiirja
+        for token in sent:
+            yield token.format()
+            for actors in sent_actors:
+                for verb in actors.keys():
+                    for dep in actors[verb]:
+                        if dep.abs_index == token.abs_index:
+                            if dep.form == 'DROP':
+                                yield dep.format()
+
         return sent_actors
 
     @staticmethod
@@ -235,7 +270,7 @@ class EmZero:
 
         return deps
 
-    def insert_pro(self, actorlist):
+    def _insert_pro(self, actorlist):
         """
         letrehoz droppolt alanyt, targyat
         alanyt: minden igenek
@@ -279,39 +314,18 @@ class EmZero:
                         if dep.form == 'DROP':
                             print('\t'.join(getattr(dep, field) for field in header))
 
-    @staticmethod
-    def _parse_fields(token, line, header):
-
-        for field in header:
-            setattr(token, field, line[header.index(field)])
-
-    def read_file(self):
-
+    @ staticmethod
+    def read_file():
         reader = csv.reader(iter(sys.stdin.readline, ''), delimiter='\t', quoting=csv.QUOTE_NONE)
         header = next(reader)
 
         corp = list()
 
-        abs_counter = 0
-        counter = 0
-
         sent = list()
-
         for line in reader:
-
             if len(line) > 1:
-                abs_counter += 1
-
-                if line:
-                    token = Word()
-                    self._parse_fields(token, line, header)
-                    token.sent_nr = str(counter)
-                    token.abs_index = str(abs_counter)
-
-                    sent.append(token)
-
+                sent.append(line)
             else:
-                counter += 1
                 corp.append(sent)
                 sent = list()
 
