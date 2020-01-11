@@ -7,8 +7,6 @@
 """
 
 from collections import defaultdict
-import sys
-import csv
 
 PRON_PERSNUM = {('Sing', '1'): 'én',
                 ('Sing', '2'): 'te',
@@ -59,19 +57,6 @@ class Word:
         """
         return cls(head.form, head.anas, head.lemma, head.xpostag, head.upos, head.feats, head.id, head.deprel,
                    head.head, head.sent_nr, head.abs_index, head.deps, head.misc)
-    #
-    # @staticmethod
-    # def _parse_udfeats(feats):
-    #     """
-    #     az UD jegyek sztringjét dolgozza fel (| és = mentén)
-    #     :param feats: UD jegyek sztringje
-    #     :return: dictbe rendezett kulcs-érték párok
-    #     """
-    #
-    #     # itt összevontam egy sorban, de nem sikerült beletenni az __init__-be
-    #     featdict = dict(feat.split('=', maxsplit=1) for feat in feats.split('|') if feats != '_')
-    #
-    #     return featdict
 
     def format(self):
         if len(self.feats) == 0:
@@ -178,8 +163,6 @@ class EmZero:
         pro.xpostag = '[/N|Pro][{0}{1}][{2}]'.format(pro.feats['Person'], EMMORPH_NUMBER[pro.feats['Number']],
                                                      pro.feats['Case'])
         pro.lemma = PRON_PERSNUM[(pro.feats['Number'], pro.feats['Person'])]
-        pro.feats = '|'.join('{0}={1}'.format(feat, val) for feat, val in sorted(pro.feats.items(),
-                                                                                 key=lambda x: x[0].lower()))
         pro.anas = '[]'
 
         return pro
@@ -249,9 +232,8 @@ class EmZero:
             for actors in sent_actors:
                 for verb in actors.keys():
                     for dep in actors[verb]:
-                        if dep.abs_index == token.abs_index:
-                            if dep.form == 'DROP':
-                                yield dep.format()
+                        if dep.abs_index == token.abs_index and  dep.form == 'DROP':
+                            yield dep.format()
 
         return sent_actors
 
@@ -279,56 +261,22 @@ class EmZero:
         :return:
         """
 
-        # for actors in self._actor_list:
         for actors in actorlist:
+
             for verb in actors.keys():
 
                 subj = self._pro_calc_features(verb, 'SUBJ')
                 actors[verb].append(subj)
+                actors[verb] = self._remove_dropped(verb.id, actors[verb], 'SUBJ')
 
-                if 'Definite' in verb.feats and verb.feats['Definite'] in {'Def', '2'}:
-                    inf = any(actor.deprel == 'INF' for actor in actors[verb])
-
-                    if not inf:
-                        obj = self._pro_calc_features(verb, 'OBJ')
-                        actors[verb].append(obj)
+                if 'Definite' in verb.feats and verb.feats['Definite'] in {'Def', '2'} \
+                        and not any(actor.deprel == 'INF' for actor in actors[verb]):
+                    obj = self._pro_calc_features(verb, 'OBJ')
+                    actors[verb].append(obj)
+                    actors[verb] = self._remove_dropped(verb.id, actors[verb], 'OBJ')
 
                 for actor in actors[verb]:
                     if 'Number[psor]' in actor.feats:
                         poss = self._pro_calc_features(actor, 'POSS')
                         actors[verb].append(poss)
-
-                # kitorli a droppolt alanyt, targyat, ha van testes megfeleloje
-                actors[verb] = self._remove_dropped(verb.id, actors[verb], 'SUBJ')
-                actors[verb] = self._remove_dropped(verb.id, actors[verb], 'OBJ')
-                for actor in actors[verb]:
-                    actors[verb] = self._remove_dropped(actor.id, actors[verb], 'POSS')
-
-    @staticmethod
-    def print_pro(header, token, actorlist):
-
-        for actors in actorlist:
-            for verb in actors.keys():
-                for dep in actors[verb]:
-                    if dep.abs_index == token.abs_index:
-                        if dep.form == 'DROP':
-                            print('\t'.join(getattr(dep, field) for field in header))
-
-    @ staticmethod
-    def read_file():
-        reader = csv.reader(iter(sys.stdin.readline, ''), delimiter='\t', quoting=csv.QUOTE_NONE)
-        header = next(reader)
-
-        corp = list()
-
-        sent = list()
-        for line in reader:
-            if len(line) > 1:
-                sent.append(line)
-            else:
-                corp.append(sent)
-                sent = list()
-
-        corp.append(sent)
-
-        return header, corp
+                        actors[verb] = self._remove_dropped(actor.id, actors[verb], 'POSS')
