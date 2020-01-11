@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from emzero import EmZero
+from xtsv import build_pipeline
+import sys
 
 
 def main():
-    zero = EmZero()
 
-    # beolvassa az xtsv-t
-    header, corpus = zero.read_file()
+    # Set input and output iterators...
+    input_iterator = open('globv_1.xtsv', encoding='UTF-8')
+    output_iterator = sys.stdout
 
-    print('\t'.join(field for field in header))
+    # Set the tagger name as in the tools dictionary
+    used_tools = ['zero']
+    presets = []
 
-    # mondatonként feldolgozza
-    for sent in corpus:
-        actors = zero.process_sentence(sent)
+    # Init and run the module as it were in xtsv
 
-    # letrehozza a droppolt alanyokat, targyakat, birtokosokat, majd torli a foloslegeseket
-        zero.insert_pro(actors)
+    # The relevant part of config.py
+    # from emdummy import DummyTagger
+    em_zero = ('emzero', 'EmZero', 'HELPER SZÖVEG AMI A WEB felületen jelenik meg',
+               (), {'source_fields': {'form', 'lemma', 'xpostag', 'upos', 'feats', 'id', 'head', 'deprel'},
+                    'target_fields': []})
+    tools = [(em_zero, ('zero', 'emZero'))]
 
-        # kiirja
-        for token in sent:
-            print('\t'.join(getattr(token, field) for field in header))
-            zero.print_pro(header, token, actors)
-        print('')
+    # Run the pipeline on input and write result to the output...
+    output_iterator.writelines(build_pipeline(input_iterator, used_tools, tools, presets))
 
 
 if __name__ == '__main__':
