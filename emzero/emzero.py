@@ -187,7 +187,7 @@ class EmZero:
         # dictet épít: az anyacsomóponthoz a gyerekeit listázza
         for head in sent:
             for dep in sent:
-                if dep.head == head.id:
+                if dep.head == head.id and head.upos in VERBS and dep.deprel in ARGUMENTS:
                     deps_dict[head].append(dep)
 
             # TODO miért is kell ez?
@@ -195,33 +195,30 @@ class EmZero:
                 deps_dict[head].append(head)
 
         for head in deps_dict:
-            if head.upos in VERBS:
 
-                verb = Word.inherit_base_features(head)
+            verb = Word.inherit_base_features(head)
 
-                actors = defaultdict(list)
+            actors = defaultdict(list)
 
-                for dep in deps_dict[head]:
-                    if dep.deprel in ARGUMENTS:
+            for dep in deps_dict[head]:
 
-                        actor = Word.inherit_base_features(dep)
+                actor = Word.inherit_base_features(dep)
 
-                        actor.sent_nr = verb.sent_nr
+                actor.sent_nr = verb.sent_nr
 
-                        # itt megnézi, hogy vannak-e birtokok a mondatban
-                        if 'Number[psor]' in actor.feats:
-                            for ifposs in sent:
-                                # van-e birtokos függőségi viszony
-                                # TODO ez most a korkorpuszra van hangolva (eredeti tagset: ATT)
-                                if ifposs.head == dep.id and ifposs.deprel == 'POSS' and ifposs.upos in NOMINALS:
+                # itt megnézi, hogy vannak-e birtokok a mondatban
+                if 'Number[psor]' in actor.feats:
+                    for ifposs in sent:
+                        # van-e birtokos függőségi viszony
+                        # TODO ez most a korkorpuszra van hangolva (eredeti tagset: ATT)
+                        if ifposs.head == dep.id and ifposs.deprel == 'POSS' and ifposs.upos in NOMINALS:
+                            newactor = Word.inherit_base_features(ifposs)
 
-                                    newactor = Word.inherit_base_features(ifposs)
+                            actors[verb].append(newactor)
 
-                                    actors[verb].append(newactor)
+                actors[verb].append(actor)
 
-                        actors[verb].append(actor)
-
-                sent_actors.append(actors)
+            sent_actors.append(actors)
 
         # letrehozza a droppolt alanyokat, targyakat, birtokosokat, majd torli a foloslegeseket
         self._insert_pro(sent_actors)
@@ -232,7 +229,7 @@ class EmZero:
             for actors in sent_actors:
                 for verb in actors.keys():
                     for dep in actors[verb]:
-                        if dep.abs_index == token.abs_index and  dep.form == 'DROP':
+                        if dep.abs_index == token.abs_index and dep.form == 'DROP':
                             yield dep.format()
 
         return sent_actors
