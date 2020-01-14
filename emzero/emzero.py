@@ -3,7 +3,7 @@
 
 """
     author: Noémi Vadász
-    last update: 2020.01.11.
+    last update: 2020.01.14.
 """
 
 from collections import defaultdict
@@ -20,7 +20,6 @@ EMMORPH_NUMBER = {'Sing': 'Sg',
                   'Plur': 'Pl',
                   'X': 'X'}
 
-# ARGUMENTS = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'POSS', 'INF', 'LOCY'}  # KorKor projekt
 ARGUMENTS = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'ATT', 'INF', 'LOCY'}
 NOMINALS = {'NOUN', 'PROPN', 'ADJ', 'NUM', 'DET', 'PRON'}
 VERBS = {'VERB'}
@@ -114,7 +113,6 @@ class EmZero:
             ret['feats']['Case'] = 'Nom'
         elif deprel == 'OBJ':
             ret['feats']['Case'] = 'Acc'
-        # elif deprel == 'POSS':  # KorKor projekt
         elif deprel == 'ATT':
             ret['feats']['Case'] = 'Gen'
         ret['feats']['PronType'] = 'Prs'
@@ -150,7 +148,6 @@ class EmZero:
                     pro.feats['Number'] = head.feats['Number']
 
                 elif head.feats['VerbForm'] == 'Inf':
-                    # TODO check INF alanya
                     if 'Person' in head.feats:
                         pro.feats['Person'] = head.feats['Person']
                         pro.feats['Number'] = head.feats['Number']
@@ -211,7 +208,6 @@ class EmZero:
                 if 'Number[psor]' in actor.feats:
                     for ifposs in sent:
                         # van-e birtokos függőségi viszony
-                        # if ifposs.head == dep.id and ifposs.deprel == 'POSS' and ifposs.upos in NOMINALS:   # KorKor projekt
                         if ifposs.head == dep.id and ifposs.deprel == 'ATT' and ifposs.upos in NOMINALS:
                             newactor = Word.inherit_base_features(ifposs)
 
@@ -275,8 +271,6 @@ class EmZero:
 
                 for actor in actors[verb]:
                     if 'Number[psor]' in actor.feats:
-                        # poss = self._pro_calc_features(actor, 'POSS')  # KorKor projekt
                         poss = self._pro_calc_features(actor, 'ATT')
                         actors[verb].append(poss)
-                        # actors[verb] = self._remove_dropped(actor.id, actors[verb], 'POSS')  # KorKor projekt
                         actors[verb] = self._remove_dropped(actor.id, actors[verb], 'ATT')
