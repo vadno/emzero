@@ -20,7 +20,8 @@ EMMORPH_NUMBER = {'Sing': 'Sg',
                   'Plur': 'Pl',
                   'X': 'X'}
 
-ARGUMENTS = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'POSS', 'INF', 'LOCY'}
+# ARGUMENTS = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'POSS', 'INF', 'LOCY'}  # KorKor projekt
+ARGUMENTS = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'ATT', 'INF', 'LOCY'}
 NOMINALS = {'NOUN', 'PROPN', 'ADJ', 'NUM', 'DET', 'PRON'}
 VERBS = {'VERB'}
 
@@ -113,7 +114,8 @@ class EmZero:
             ret['feats']['Case'] = 'Nom'
         elif deprel == 'OBJ':
             ret['feats']['Case'] = 'Acc'
-        elif deprel == 'POSS':
+        # elif deprel == 'POSS':  # KorKor projekt
+        elif deprel == 'ATT':
             ret['feats']['Case'] = 'Gen'
         ret['feats']['PronType'] = 'Prs'
 
@@ -127,7 +129,7 @@ class EmZero:
         :return:
         """
 
-        pro = Word(tid=head.id + '.' + role,  # TODO ha alany és tárgy is van, a tárgy .2 legyen (az alany pedig .1)
+        pro = Word(tid=head.id + '.' + role,
                    sent_nr=head.sent_nr,
                    abs_index=head.abs_index,
                    deprel=role,
@@ -190,7 +192,6 @@ class EmZero:
                 if dep.head == head.id and head.upos in VERBS and dep.deprel in ARGUMENTS:
                     deps_dict[head].append(dep)
 
-            # TODO miért is kell ez?
             if head.upos in VERBS and head not in deps_dict:
                 deps_dict[head].append(head)
 
@@ -210,8 +211,8 @@ class EmZero:
                 if 'Number[psor]' in actor.feats:
                     for ifposs in sent:
                         # van-e birtokos függőségi viszony
-                        # TODO ez most a korkorpuszra van hangolva (eredeti tagset: ATT)
-                        if ifposs.head == dep.id and ifposs.deprel == 'POSS' and ifposs.upos in NOMINALS:
+                        # if ifposs.head == dep.id and ifposs.deprel == 'POSS' and ifposs.upos in NOMINALS:   # KorKor projekt
+                        if ifposs.head == dep.id and ifposs.deprel == 'ATT' and ifposs.upos in NOMINALS:
                             newactor = Word.inherit_base_features(ifposs)
 
                             actors[verb].append(newactor)
@@ -274,6 +275,8 @@ class EmZero:
 
                 for actor in actors[verb]:
                     if 'Number[psor]' in actor.feats:
-                        poss = self._pro_calc_features(actor, 'POSS')
+                        # poss = self._pro_calc_features(actor, 'POSS')  # KorKor projekt
+                        poss = self._pro_calc_features(actor, 'ATT')
                         actors[verb].append(poss)
-                        actors[verb] = self._remove_dropped(actor.id, actors[verb], 'POSS')
+                        # actors[verb] = self._remove_dropped(actor.id, actors[verb], 'POSS')  # KorKor projekt
+                        actors[verb] = self._remove_dropped(actor.id, actors[verb], 'ATT')
