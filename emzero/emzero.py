@@ -170,6 +170,10 @@ class EmZero:
 
         self._counter += 1
         sent = []
+        sent_dict = defaultdict(list)
+        verbs = {}
+        birtokosokkal_jaro_birtokok = set()
+        birtokok = {}
 
         for tok in inp_sent:
             self._abs_counter += 1
@@ -178,58 +182,39 @@ class EmZero:
                          head=tok[field_indices[6]], deprel=tok[field_indices[7]],
                          sent_nr=str(self._counter), abs_index=str(self._abs_counter))
             sent.append(token)
+            if token.deprel in ARGUMENTS:
+                sent_dict[token.head].append(token)
+            if token.upos in VERBS:
+                verbs[token.id] = token
+            if token.deprel == 'ATT' and token.upos in NOMINALS:
+                birtokosokkal_jaro_birtokok.add(token.head)
+            if 'Number[psor]' in token.feats:
+                birtokok[token] = token.head
 
-        sent_actors = list()
-        deps_dict = defaultdict(list)
+        zeros = defaultdict(list)
+        for verb_id, verb in verbs.items():
+            subj = False
+            obj = False
+            inf = False
+            for tok in sent_dict[verb_id]:
+                subj |= tok.deprel == 'SUBJ'
+                obj |= tok.deprel == 'OBJ'
+                inf |= tok.deprel == 'INF'
+            if not subj:
+                zeros[verb_id].append(self._pro_calc_features(verb, 'SUBJ'))
+            if not obj and 'Definite' in verb.feats and verb.feats['Definite'] in {'Def',
+                                                                                   '2'} and not inf:  # TODO: megjegyzem, hogy ezt a sort másoltam és a {'Def', '2'} halmaz konstansként kiszedésre érdemes. Valahol ott van a kódban.
+                zeros[verb_id].append(self._pro_calc_features(verb, 'SUBJ'))
 
-        # elmenti az összes függőséget
-        # dictet épít: az anyacsomóponthoz a gyerekeit listázza
-        for head in sent:
-            for dep in sent:
-                if dep.head == head.id and head.upos in VERBS and dep.deprel in ARGUMENTS:
-                    deps_dict[head].append(dep)
+        for birtok, verb_id in birtokok.items():
+            if verb_id in verbs and birtok.id not in birtokosokkal_jaro_birtokok:
+                zeros[birtok.id].append(
+                    self._pro_calc_features(birtok, 'ATT'))
 
-            if head.upos in VERBS and head not in deps_dict:
-                deps_dict[head].append(head)
-
-        for head in deps_dict:
-
-            verb = Word.inherit_base_features(head)
-
-            actors = defaultdict(list)
-
-            for dep in deps_dict[head]:
-
-                actor = Word.inherit_base_features(dep)
-
-                actor.sent_nr = verb.sent_nr
-
-                # itt megnézi, hogy vannak-e birtokok a mondatban
-                if 'Number[psor]' in actor.feats:
-                    for ifposs in sent:
-                        # van-e birtokos függőségi viszony
-                        if ifposs.head == dep.id and ifposs.deprel == 'ATT' and ifposs.upos in NOMINALS:
-                            newactor = Word.inherit_base_features(ifposs)
-
-                            actors[verb].append(newactor)
-
-                actors[verb].append(actor)
-
-            sent_actors.append(actors)
-
-        # letrehozza a droppolt alanyokat, targyakat, birtokosokat, majd torli a foloslegeseket
-        self._insert_pro(sent_actors)
-
-        # kiirja
         for token in sent:
             yield token.format()
-            for actors in sent_actors:
-                for verb in actors.keys():
-                    for dep in actors[verb]:
-                        if dep.abs_index == token.abs_index and dep.form == 'DROP':
-                            yield dep.format()
-
-        return sent_actors
+            for zero in zeros[token.id]:
+                yield zero.format()
 
     @staticmethod
     def _remove_dropped(head, deps, role):
