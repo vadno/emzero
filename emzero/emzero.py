@@ -3,7 +3,7 @@
 
 """
     author: Noémi Vadász
-    last update: 2020.01.14.
+    last update: 2020.01.20.
 """
 
 from collections import defaultdict
@@ -23,6 +23,7 @@ EMMORPH_NUMBER = {'Sing': 'Sg',
 ARGUMENTS = {'SUBJ', 'OBJ', 'OBL', 'DAT', 'ATT', 'INF', 'LOCY'}
 NOMINALS = {'NOUN', 'PROPN', 'ADJ', 'NUM', 'DET', 'PRON'}
 VERBS = {'VERB'}
+DEFINITE = {'Def', '2'}
 
 
 class Word:
@@ -101,25 +102,7 @@ class EmZero:
                 field_names['xpostag'], field_names['feats'], field_names['head'], field_names['deprel']]
 
     @staticmethod
-    def _pro_default_features(deprel):
-        """
-        a droppolt nevmas alapjegyeit allitja be
-        :param deprel: a droppolt actor adatszerkezete (deprel)
-        :return:
-        """
-
-        ret = {'form': 'DROP', 'upos': 'PRON', 'feats': dict()}
-        if deprel == 'SUBJ':
-            ret['feats']['Case'] = 'Nom'
-        elif deprel == 'OBJ':
-            ret['feats']['Case'] = 'Acc'
-        elif deprel == 'ATT':
-            ret['feats']['Case'] = 'Gen'
-        ret['feats']['PronType'] = 'Prs'
-
-        return ret
-
-    def _pro_calc_features(self, head, role):
+    def _pro_calc_features(head, role):
         """
         a droppolt névmás jegyeit nyeri ki a fejből (annak UD jegyeiből)
         :param head:
@@ -131,17 +114,18 @@ class EmZero:
                    sent_nr=head.sent_nr,
                    abs_index=head.abs_index,
                    deprel=role,
-                   head=head.id, **self._pro_default_features(role))
+                   head=head.id, **{'form': 'DROP', 'upos': 'PRON', 'feats': {'PronType': 'Prs'}})
 
         if role == 'OBJ':
+            pro.feats['Case'] = 'Acc'
             pro.feats['Number'] = 'Sing'
-
             if head.feats['Definite'] == '2':
                 pro.feats['Person'] = '2'
             else:
                 pro.feats['Person'] = '3'
 
         elif role == 'SUBJ':
+            pro.feats['Case'] = 'Nom'
             if 'VerbForm' in head.feats:
                 if head.feats['VerbForm'] == 'Fin':
                     pro.feats['Person'] = head.feats['Person']
@@ -155,9 +139,12 @@ class EmZero:
                         pro.feats['Person'] = 'X'
                         pro.feats['Number'] = 'X'
 
-        else:
+        elif role == 'ATT':
+            pro.feats['Case'] = 'Gen'
             pro.feats['Person'] = head.feats['Person[psor]']
             pro.feats['Number'] = head.feats['Number[psor]']
+        else:
+            exit(1)
 
         pro.xpostag = '[/N|Pro][{0}{1}][{2}]'.format(pro.feats['Person'], EMMORPH_NUMBER[pro.feats['Number']],
                                                      pro.feats['Case'])
@@ -172,8 +159,8 @@ class EmZero:
         sent = []
         sent_dict = defaultdict(list)
         verbs = {}
-        birtokosokkal_jaro_birtokok = set()
-        birtokok = {}
+        possessum_with_possessor = set()
+        possessum = {}
 
         for tok in inp_sent:
             self._abs_counter += 1
@@ -187,9 +174,9 @@ class EmZero:
             if token.upos in VERBS:
                 verbs[token.id] = token
             if token.deprel == 'ATT' and token.upos in NOMINALS:
-                birtokosokkal_jaro_birtokok.add(token.head)
+                possessum_with_possessor.add(token.head)
             if 'Number[psor]' in token.feats:
-                birtokok[token] = token.head
+                possessum[token] = token.head
 
         zeros = defaultdict(list)
         for verb_id, verb in verbs.items():
@@ -202,12 +189,11 @@ class EmZero:
                 inf |= tok.deprel == 'INF'
             if not subj:
                 zeros[verb_id].append(self._pro_calc_features(verb, 'SUBJ'))
-            if not obj and 'Definite' in verb.feats and verb.feats['Definite'] in {'Def',
-                                                                                   '2'} and not inf:  # TODO: megjegyzem, hogy ezt a sort másoltam és a {'Def', '2'} halmaz konstansként kiszedésre érdemes. Valahol ott van a kódban.
+            if not obj and 'Definite' in verb.feats and verb.feats['Definite'] in DEFINITE and not inf:
                 zeros[verb_id].append(self._pro_calc_features(verb, 'SUBJ'))
 
-        for birtok, verb_id in birtokok.items():
-            if verb_id in verbs and birtok.id not in birtokosokkal_jaro_birtokok:
+        for birtok, verb_id in possessum.items():
+            if verb_id in verbs and birtok.id not in possessum_with_possessor:
                 zeros[birtok.id].append(
                     self._pro_calc_features(birtok, 'ATT'))
 
@@ -215,47 +201,3 @@ class EmZero:
             yield token.format()
             for zero in zeros[token.id]:
                 yield zero.format()
-
-    @staticmethod
-    def _remove_dropped(head, deps, role):
-        """
-        kitorli a actors kozul azokat a droppolt alanyokat, targyakat, amikhez van testes
-        :param? head:
-        :param deps: az aktualis ige vonzatai
-        :param role: szerep
-        :return:
-        """
-
-        if any(actor.head == head and actor.deprel == role and actor.form != 'DROP' for actor in deps):
-            deps = [actor for actor in deps if actor.head != head or actor.deprel != role or actor.form != 'DROP']
-
-        return deps
-
-    def _insert_pro(self, actorlist):
-        """
-        letrehoz droppolt alanyt, targyat
-        alanyt: minden igenek
-        targyat: csak a definit ragozasu igeknek
-        :param
-        :return:
-        """
-
-        for actors in actorlist:
-
-            for verb in actors.keys():
-
-                subj = self._pro_calc_features(verb, 'SUBJ')
-                actors[verb].append(subj)
-                actors[verb] = self._remove_dropped(verb.id, actors[verb], 'SUBJ')
-
-                if 'Definite' in verb.feats and verb.feats['Definite'] in {'Def', '2'} \
-                        and not any(actor.deprel == 'INF' for actor in actors[verb]):
-                    obj = self._pro_calc_features(verb, 'OBJ')
-                    actors[verb].append(obj)
-                    actors[verb] = self._remove_dropped(verb.id, actors[verb], 'OBJ')
-
-                for actor in actors[verb]:
-                    if 'Number[psor]' in actor.feats:
-                        poss = self._pro_calc_features(actor, 'ATT')
-                        actors[verb].append(poss)
-                        actors[verb] = self._remove_dropped(actor.id, actors[verb], 'ATT')
