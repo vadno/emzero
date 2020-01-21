@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from xtsv import build_pipeline
+from xtsv import build_pipeline, parser_skeleton
 import sys
 
 
 def main():
 
+    argparser = parser_skeleton(description='emZero - a module for marking zero pronouns'
+                                            ' in dependency parsed sentences')
+    opts = argparser.parse_args()
+
     # Set input and output iterators...
-    input_iterator = open('globv_1.xtsv', encoding='UTF-8')
-    output_iterator = sys.stdout
+    if opts.input_text is not None:
+        input_data = opts.input_text
+    else:
+        input_data = opts.input_stream
+    output_iterator = opts.output_stream
 
     # Set the tagger name as in the tools dictionary
     used_tools = ['zero']
@@ -25,7 +32,7 @@ def main():
     tools = [(em_zero, ('zero', 'emZero'))]
 
     # Run the pipeline on input and write result to the output...
-    output_iterator.writelines(build_pipeline(input_iterator, used_tools, tools, presets))
+    output_iterator.writelines(build_pipeline(input_data, used_tools, tools, presets))
 
 
 if __name__ == '__main__':
