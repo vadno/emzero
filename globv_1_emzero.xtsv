@@ -35,7 +35,7 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 13	,	,	PUNCT	[Punct]	_	7	PUNCT
 14	melyek	amely	PRON	[/N|Pro|Rel][Pl][Nom]	Case=Nom|Number=Plur|Person=3|PronType=Rel	16	SUBJ
 15	segítségükre	segítség	NOUN	[/N][Poss.3Pl][Subl]	Case=Sub|Number=Sing|Number[psor]=Plur|Person[psor]=3	16	OBL
-15.ATT	DROP	ők/azok	PRON	[/N|Pro][3Pl][Gen]	Case=Gen|Number=Plur|Person=3|PronType=Prs	15	ATT
+15.POSS	DROP	ők/azok	PRON	[/N|Pro][3Pl][Gen]	Case=Gen|Number=Plur|Person=3|PronType=Prs	15	ATT
 16	lehetnének	van	VERB	[/V][_Mod/V][Cond.NDef.3Pl]	Definite=Ind|Mood=Cnd,Pot|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin|Voice=Act	7	ATT
 17	az	az	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	18	DET
 18	ügy	ügy	NOUN	[/N][Nom]	Case=Nom|Number=Sing	19	ATT
@@ -69,7 +69,7 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 3	Legfelsőbb	felső	ADJ	[/Supl][/Adj][_Comp/Adj][Nom]	Case=Nom|Degree=Sup|Number=Sing	4	NE
 4	Bíróság	bíróság	NOUN	[/N][Nom]	Case=Nom|Number=Sing	6	SUBJ
 5	elégedetlenségét	elégedetlenség	NOUN	[/N][Poss.3Sg][Acc]	Case=Acc|Number=Sing|Number[psor]=Sing|Person[psor]=3	6	OBJ
-5.ATT	DROP	ő/az	PRON	[/N|Pro][3Sg][Gen]	Case=Gen|Number=Sing|Person=3|PronType=Prs	5	ATT
+5.POSS	DROP	ő/az	PRON	[/N|Pro][3Sg][Gen]	Case=Gen|Number=Sing|Person=3|PronType=Prs	5	ATT
 6	fejezte	fejez	VERB	[/V][Pst.Def.3Sg]	Definite=Def|Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	0	ROOT
 7	ki	ki	PART	[/Prev]	_	6	PREVERB
 8	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	9	DET
@@ -140,7 +140,7 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 10	,	,	PUNCT	[Punct]	_	5	PUNCT
 11	hogy	hogy	SCONJ	[/Cnj]	_	5	CONJ
 12	autóikat	autó	NOUN	[/N][Pl.Poss.3Pl][Acc]	Case=Acc|Number=Plur|Number[psor]=Plur|Person[psor]=3	16	OBJ
-12.ATT	DROP	ők/azok	PRON	[/N|Pro][3Pl][Gen]	Case=Gen|Number=Plur|Person=3|PronType=Prs	12	ATT
+12.POSS	DROP	ők/azok	PRON	[/N|Pro][3Pl][Gen]	Case=Gen|Number=Plur|Person=3|PronType=Prs	12	ATT
 13	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	14	DET
 14	tüntetés	tüntetés	NOUN	[/N][Nom]	Case=Nom|Number=Sing	15	ATT
 15	helyszínére	helyszín	NOUN	[/N][Poss.3Sg][Subl]	Case=Sub|Number=Sing|Number[psor]=Sing|Person[psor]=3	16	OBL
