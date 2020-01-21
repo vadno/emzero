@@ -26,57 +26,18 @@ VERBS = {'VERB'}
 DEFINITE = {'Def', '2'}
 
 
-class Word:
+def parse_feats(feats):
+    return dict(feat.split('=', maxsplit=1) for feat in feats.split('|') if feats != '_')
 
-    def __init__(self, form=None, anas=None, lemma=None, xpostag=None, upos=None, feats=None, tid=None, deprel=None,
-                 head=None, sent_nr=None, abs_index=None, deps=None):
-        """
-            Explicit megadva a feature-öket
-        """
-        self.form = form  # token
-        self.anas = anas  # anas
-        self.lemma = lemma  # egyértelműsített lemma
-        self.xpostag = xpostag  # emtag
-        self.upos = upos  # emmorph2ud
-        if isinstance(feats, str):
-            feats = dict(feat.split('=', maxsplit=1) for feat in feats.split('|') if feats != '_')
-            # feats = self._parse_udfeats(feats)
-        self.feats = feats  # emmorph2ud
-        self.id = tid  # függőségi elemzéshez id
-        self.deprel = deprel  # függőségi él típusa
-        self.head = head  # amitől függ az elem
-        self.sent_nr = sent_nr  # saját mondatszámláló
-        self.abs_index = abs_index  # saját tokenszámláló
-        self.deps = deps
 
-    @classmethod
-    def inherit_base_features(cls, head):
-        """
-        feature-ök, amelyeket a zéró elem attól a fejtől örököl
-        :return:
-        """
-        return cls(head.form, head.anas, head.lemma, head.xpostag, head.upos, head.feats, head.id, head.deprel,
-                   head.head, head.sent_nr, head.abs_index, head.deps)
+def format_word(word, ind_to_names):
+    if isinstance(word['feats'], dict):
+        word['feats'] = '|'.join('{0}={1}'.format(feat, val) for feat, val in sorted(word['feats'].items(),
+                                                                                     key=lambda x: x[0].lower()))
+    else:
+        word['feats'] = '_'
 
-    def format(self):
-        if len(self.feats) == 0:
-            feats = '_'
-        elif isinstance(self.feats, dict):
-            feats = '|'.join('{0}={1}'.format(feat, val) for feat, val in sorted(self.feats.items(),
-                                                                                 key=lambda x: x[0].lower()))
-        else:
-            feats = self.feats
-
-        formatted_list = [str(i) for i in [self.id, self.form, self.lemma, self.upos, self.xpostag, feats,
-                                           self.head, self.deprel, self.deps] if i is not None]
-        return formatted_list
-
-    def __str__(self):
-        return '\t'.join(self.format())
-
-    def __repr__(self):
-        return repr([self.id, self.form, self.lemma, self.upos, self.xpostag, self.feats, self.head, self.deprel,
-                     self.deps])
+    return [word.get(i, '_') for i in ind_to_names.keys()]  # Place _ to unknown fields
 
 
 class EmZero:
@@ -97,8 +58,7 @@ class EmZero:
 
     @staticmethod
     def prepare_fields(field_names):
-        return [field_names['id'], field_names['form'], field_names['lemma'], field_names['upos'],
-                field_names['xpostag'], field_names['feats'], field_names['head'], field_names['deprel']]
+        return {k: v for k, v in field_names.items() if isinstance(k, str)}, field_names['id']
 
     @staticmethod
     def _pro_calc_features(head, role):
@@ -109,73 +69,72 @@ class EmZero:
         :return:
         """
 
-        pro = Word(tid=head.id + '.' + role,
-                   sent_nr=head.sent_nr,
-                   abs_index=head.abs_index,
-                   deprel=role,
-                   head=head.id, **{'form': 'DROP', 'upos': 'PRON', 'feats': {'PronType': 'Prs'}})
+        pro = {'id': head['id'] + '.' + role, 'sent_nr': head['sent_nr'], 'abs_index': head['abs_index'],
+               'deprel': role, 'head': head['id'], 'form': 'DROP', 'upos': 'PRON', 'feats': {'PronType': 'Prs'}}
 
         if role == 'OBJ':
-            pro.feats['Case'] = 'Acc'
-            pro.feats['Number'] = 'Sing'
-            if head.feats['Definite'] == '2':
-                pro.feats['Person'] = '2'
+            pro['feats']['Case'] = 'Acc'
+            pro['feats']['Number'] = 'Sing'
+            if head['feats']['Definite'] == '2':
+                pro['feats']['Person'] = '2'
             else:
-                pro.feats['Person'] = '3'
+                pro['feats']['Person'] = '3'
 
         elif role == 'SUBJ':
-            pro.feats['Case'] = 'Nom'
-            if 'VerbForm' in head.feats:
-                if head.feats['VerbForm'] == 'Fin':
-                    pro.feats['Person'] = head.feats['Person']
-                    pro.feats['Number'] = head.feats['Number']
+            pro['feats']['Case'] = 'Nom'
+            if 'VerbForm' in head['feats']:
+                if head['feats']['VerbForm'] == 'Fin':
+                    pro['feats']['Person'] = head['feats']['Person']
+                    pro['feats']['Number'] = head['feats']['Number']
 
-                elif head.feats['VerbForm'] == 'Inf':
-                    if 'Person' in head.feats:
-                        pro.feats['Person'] = head.feats['Person']
-                        pro.feats['Number'] = head.feats['Number']
+                elif head['feats']['VerbForm'] == 'Inf':
+                    if 'Person' in head['feats']:
+                        pro['feats']['Person'] = head['feats']['Person']
+                        pro['feats']['Number'] = head['feats']['Number']
                     else:
-                        pro.feats['Person'] = 'X'
-                        pro.feats['Number'] = 'X'
+                        pro['feats']['Person'] = 'X'
+                        pro['feats']['Number'] = 'X'
 
         elif role == 'ATT':
-            pro.feats['Case'] = 'Gen'
-            pro.feats['Person'] = head.feats['Person[psor]']
-            pro.feats['Number'] = head.feats['Number[psor]']
+            pro['id'] = pro['id'].strip('ATT') + 'POSS'
+            pro['feats']['Case'] = 'Gen'
+            pro['feats']['Person'] = head['feats']['Person[psor]']
+            pro['feats']['Number'] = head['feats']['Number[psor]']
         else:
             exit(1)
 
-        pro.xpostag = '[/N|Pro][{0}{1}][{2}]'.format(pro.feats['Person'], EMMORPH_NUMBER[pro.feats['Number']],
-                                                     pro.feats['Case'])
-        pro.lemma = PRON_PERSNUM[(pro.feats['Number'], pro.feats['Person'])]
-        pro.anas = '[]'
+        pro['xpostag'] = '[/N|Pro][{0}{1}][{2}]'.format(pro['feats']['Person'], EMMORPH_NUMBER[pro['feats']['Number']],
+                                                        pro['feats']['Case'])
+        pro['lemma'] = PRON_PERSNUM[(pro['feats']['Number'], pro['feats']['Person'])]
+        pro['anas'] = '[]'
 
         return pro
 
-    def process_sentence(self, inp_sent, field_indices):
+    def process_sentence(self, inp_sent, field_names_and_id_ind):
+        field_names, id_field_ind = field_names_and_id_ind
 
         self._counter += 1
-        sent = []
         sent_dict = defaultdict(list)
         verbs = {}
         possessum_with_possessor = set()
         possessum = {}
 
-        for tok in inp_sent:
+        for token_nr, tok in enumerate(inp_sent):
             self._abs_counter += 1
-            token = Word(tid=tok[field_indices[0]], form=tok[field_indices[1]], lemma=tok[field_indices[2]],
-                         upos=tok[field_indices[3]], xpostag=tok[field_indices[4]], feats=tok[field_indices[5]],
-                         head=tok[field_indices[6]], deprel=tok[field_indices[7]],
-                         sent_nr=str(self._counter), abs_index=str(self._abs_counter))
-            sent.append(token)
-            if token.deprel in ARGUMENTS:
-                sent_dict[token.head].append(token)
-            if token.upos in VERBS:
-                verbs[token.id] = token
-            if token.deprel == 'ATT' and token.upos in NOMINALS:
-                possessum_with_possessor.add(token.head)
-            if 'Number[psor]' in token.feats:
-                possessum[token] = token.head
+            token = {k: tok[v] for k, v in field_names.items()}
+            token['sent_nr'] = self._counter
+            token['abs_index'] = self._abs_counter
+            token['feats'] = parse_feats(token['feats'])
+
+            if token['deprel'] in ARGUMENTS:
+                sent_dict[token['head']].append(token)
+            if token['upos'] in VERBS:
+                verbs[token['id']] = token
+            if token['deprel'] == 'ATT' and token['upos'] in NOMINALS:
+                possessum_with_possessor.add(token['head'])
+            # Posessum is always placed after the posesssor  # TODO: Ez igaz?
+            if 'Number[psor]' in token['feats'] and token['id'] not in possessum_with_possessor:
+                possessum[token['head']] = token  # verb (id) -> candidate possessums
 
         zeros = defaultdict(list)
         for verb_id, verb in verbs.items():
@@ -183,20 +142,20 @@ class EmZero:
             obj = False
             inf = False
             for tok in sent_dict[verb_id]:
-                subj |= tok.deprel == 'SUBJ'
-                obj |= tok.deprel == 'OBJ'
-                inf |= tok.deprel == 'INF'
+                subj |= tok['deprel'] == 'SUBJ'
+                obj |= tok['deprel'] == 'OBJ'
+                inf |= tok['deprel'] == 'INF'
             if not subj:
                 zeros[verb_id].append(self._pro_calc_features(verb, 'SUBJ'))
-            if not obj and 'Definite' in verb.feats and verb.feats['Definite'] in DEFINITE and not inf:
+            if not obj and 'Definite' in verb['feats'] and verb['feats']['Definite'] in DEFINITE and not inf:
                 zeros[verb_id].append(self._pro_calc_features(verb, 'SUBJ'))
 
-        for birtok, verb_id in possessum.items():
-            if verb_id in verbs and birtok.id not in possessum_with_possessor:
-                zeros[birtok.id].append(
-                    self._pro_calc_features(birtok, 'ATT'))
+        for verb_id, token in possessum.items():
+            if verb_id in verbs and token['id']:
+                zeros[token['id']].append(self._pro_calc_features(token, 'ATT'))
+                break
 
-        for token in sent:
-            yield token.format()
-            for zero in zeros[token.id]:
-                yield zero.format()
+        for token in inp_sent:  # Output the original tokens
+            yield token
+            for zero in zeros[token[id_field_ind]]:  # Insert extra tokens when needed
+                yield format_word(zero, field_names)
