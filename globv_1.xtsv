@@ -162,3 +162,4 @@ id	form	lemma	upos	xpostag	feats	head	deprel
 10	a	a	DET	[/Det|Art.Def]	Definite=Def|PronType=Art	11	DET
 11	demonstrációt	demonstráció	NOUN	[/N][Acc]	Case=Acc|Number=Sing	8	OBJ
 12	.	.	PUNCT	[Punct]	_	0	PUNCT
+

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from xtsv import build_pipeline, parser_skeleton
-import sys
 
 
 def main():

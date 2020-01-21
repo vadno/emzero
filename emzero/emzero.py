@@ -3,7 +3,7 @@
 
 """
     author: Noémi Vadász
-    last update: 2020.01.20.
+    last update: 2020.01.21.
 """
 
 from collections import defaultdict
@@ -96,7 +96,7 @@ class EmZero:
                         pro['feats']['Number'] = 'X'
 
         elif role == 'ATT':
-            pro['id'] = pro['id'].strip('ATT') + 'POSS'
+            pro['id'] = pro['id'][:-3] + 'POSS'
             pro['feats']['Case'] = 'Gen'
             pro['feats']['Person'] = head['feats']['Person[psor]']
             pro['feats']['Number'] = head['feats']['Number[psor]']
