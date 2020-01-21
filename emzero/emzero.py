@@ -70,7 +70,7 @@ class EmZero:
         """
 
         pro = {'id': head['id'] + '.' + role, 'sent_nr': head['sent_nr'], 'abs_index': head['abs_index'],
-               'deprel': role, 'head': head['id'], 'form': 'DROP', 'upos': 'PRON', 'feats': {'PronType': 'Prs'}}
+               'deprel': role, 'head': head['id'], 'form': 'DROP', 'upostag': 'PRON', 'feats': {'PronType': 'Prs'}}
 
         if role == 'OBJ':
             pro['feats']['Case'] = 'Acc'
@@ -128,9 +128,9 @@ class EmZero:
 
             if token['deprel'] in ARGUMENTS:
                 sent_dict[token['head']].append(token)
-            if token['upos'] in VERBS:
+            if token['upostag'] in VERBS:
                 verbs[token['id']] = token
-            if token['deprel'] == 'ATT' and token['upos'] in NOMINALS:
+            if token['deprel'] == 'ATT' and token['upostag'] in NOMINALS:
                 possessum_with_possessor.add(token['head'])
             # Posessum is always placed after the posesssor
             if 'Number[psor]' in token['feats'] and token['id'] not in possessum_with_possessor:

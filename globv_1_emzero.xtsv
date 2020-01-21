@@ -1,4 +1,4 @@
-id	form	lemma	upos	xpostag	feats	head	deprel
+id	form	lemma	upostag	xpostag	feats	head	deprel
 1	Három	három	NUM	[/Num][Nom]	Case=Nom|Number=Sing|NumType=Card	2	ATT
 2	hónap	hónap	NOUN	[/N][Nom]	Case=Nom|Number=Sing	3	SUBJ
 3	telt	telik	VERB	[/V][Pst.NDef.3Sg]	Definite=Ind|Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin|Voice=Act	0	ROOT

@@ -25,8 +25,9 @@ def main():
 
     # The relevant part of config.py
     # from emdummy import DummyTagger
-    em_zero = ('emzero', 'EmZero', 'Inserts zero pronouns (subjects, objects and possessors) into preanalyzed texts.',
-               (), {'source_fields': {'form', 'lemma', 'xpostag', 'upos', 'feats', 'id', 'head', 'deprel'},
+    em_zero = ('emzero', 'EmZero', 'Inserts zero pronouns (subjects, objects and possessors) '
+                                   'into dependency parsed texts',
+               (), {'source_fields': {'form', 'lemma', 'xpostag', 'upostag', 'feats', 'id', 'head', 'deprel'},
                     'target_fields': []})
     tools = [(em_zero, ('zero', 'emZero'))]
 
