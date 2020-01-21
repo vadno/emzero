@@ -132,7 +132,7 @@ class EmZero:
                 verbs[token['id']] = token
             if token['deprel'] == 'ATT' and token['upos'] in NOMINALS:
                 possessum_with_possessor.add(token['head'])
-            # Posessum is always placed after the posesssor  # TODO: Ez igaz?
+            # Posessum is always placed after the posesssor
             if 'Number[psor]' in token['feats'] and token['id'] not in possessum_with_possessor:
                 possessum[token['head']] = token  # verb (id) -> candidate possessums
 
