@@ -29,7 +29,7 @@ DEFINITE = {'Def', '2'}
 class Word:
 
     def __init__(self, form=None, anas=None, lemma=None, xpostag=None, upos=None, feats=None, tid=None, deprel=None,
-                 head=None, sent_nr=None, abs_index=None, deps=None, misc=None):
+                 head=None, sent_nr=None, abs_index=None, deps=None):
         """
             Explicit megadva a feature-öket
         """
@@ -48,7 +48,6 @@ class Word:
         self.sent_nr = sent_nr  # saját mondatszámláló
         self.abs_index = abs_index  # saját tokenszámláló
         self.deps = deps
-        self.misc = misc
 
     @classmethod
     def inherit_base_features(cls, head):
@@ -57,7 +56,7 @@ class Word:
         :return:
         """
         return cls(head.form, head.anas, head.lemma, head.xpostag, head.upos, head.feats, head.id, head.deprel,
-                   head.head, head.sent_nr, head.abs_index, head.deps, head.misc)
+                   head.head, head.sent_nr, head.abs_index, head.deps)
 
     def format(self):
         if len(self.feats) == 0:
@@ -69,7 +68,7 @@ class Word:
             feats = self.feats
 
         formatted_list = [str(i) for i in [self.id, self.form, self.lemma, self.upos, self.xpostag, feats,
-                                           self.head, self.deprel, self.deps, self.misc] if i is not None]
+                                           self.head, self.deprel, self.deps] if i is not None]
         return formatted_list
 
     def __str__(self):
@@ -77,7 +76,7 @@ class Word:
 
     def __repr__(self):
         return repr([self.id, self.form, self.lemma, self.upos, self.xpostag, self.feats, self.head, self.deprel,
-                     self.deps, self.misc])
+                     self.deps])
 
 
 class EmZero:
