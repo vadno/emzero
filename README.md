@@ -10,7 +10,7 @@ emZero inserts nodes for droped pronouns into an [xtsv](https://github.com/dlt-r
 
 emZero can be used
 * as a module of [emtsv](https://github.com/dlt-rilmta/emtsv)
-* independently as it reads from standard input and writes to standard output
+* independently by issuing `python3 -m emzero` as it reads from standard input and writes to standard output
 
 ### Input and output
 
